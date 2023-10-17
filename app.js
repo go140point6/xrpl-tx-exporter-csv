@@ -1,88 +1,128 @@
-const Client = require('rippled-ws-client')
-const {parseBalanceChanges} = require('ripple-lib-transactionparser')
+const Client = require('rippled-ws-client');
+const { parseBalanceChanges } = require('ripple-lib-transactionparser');
 
-const app = async (account, cb, returnTx) => {
+const app = async (account, cb, isoEndDate, returnTx) => {
   const display = result => {
     if (result?.transactions) {
-      result?.transactions.forEach(r => {
-        const {tx, meta} = r
-        let direction = 'other'
-        if (tx?.Account === account) direction = 'sent'
-        if (tx?.Destination === account) direction = 'received'
-        const moment = (new Date((tx.date + 946684800) * 1000)).toISOString()
-        const balanceChanges = parseBalanceChanges(meta)
+      for (const r of result.transactions) {
+        const { tx, meta } = r;
+        let direction = 'other';
+        if (tx?.Account === account) direction = 'sent';
+        if (tx?.Destination === account) direction = 'received';
+        let moment = new Date((tx.date + 946684800) * 1000).toISOString();
+        
+        // Check if the transaction date is greater than the cutoff date (isoEndDate)
+        if (moment <= isoEndDate) {
+          return; // Skip this transaction and continue to the next one
+        }
+
+        const balanceChanges = parseBalanceChanges(meta);
         if (Object.keys(balanceChanges).indexOf(account) > -1) {
-          const mutations = balanceChanges[account]
-          mutations.forEach(mutation => {
-            const currency = mutation.counterparty === ''
-              ? 'XRP'
-              : `${mutation.counterparty}.${mutation.currency}`
+          const mutations = balanceChanges[account];
+          for (const mutation of mutations) {
+            let currency = mutation.counterparty === '' ? 'XRP' : `${mutation.counterparty}.${mutation.currency}`;
+            const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee) ? 1 : 0;
+            const fee = direction === 'sent' ? Number(tx?.Fee) / 1000000 * -1 : 0;
 
-            const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee)
-              ? 1
-              : 0
+            //console.log(tx)
+            //console.log(mutation.value)
 
-              const fee = direction === 'sent'
-              ? Number(tx?.Fee) / 1000000 * -1
-              : 0
+            // I don't track the fractions of XRP used for gas or XPR received for spam messages (less than 0.01 XRP, sent or received), so create blank entries for these conditions
+            //if (tx?.TransactionType === 'NFTokenCreateOffer' || tx?.TransactionType === 'NFTokenAcceptOffer' || tx?.TransactionType === 'NFTokenCancelOffer' || mutation.value <= 0.001) {
+            if (currency === 'XRP' && mutation.value <= 0.01) {
+                moment = undefined
+                tx.TransactionType = undefined
+                mutation.value = undefined
+                currency = undefined
+                tx.hash = undefined
+            }
 
             cb({
-              ledger: tx.ledger_index,
-              direction: direction,
-              txtype: tx.TransactionType,
-              date: moment,
-              currency: currency,
-              amount: mutation.value,
-              is_fee: isFee,
-              fee: fee,
-              hash: tx.hash,
+              "Time": undefined,
+              "Raw Time": moment,
+              "Type": tx.TransactionType,
+              "Amount": mutation.value,
+              "Currency": currency,
+              "Counterparty": mutation.counterparty,
+              "Counterparty name": undefined,
+              "balance": undefined,
+              "Hash": tx.hash,
               _tx: returnTx ? tx : undefined,
-              _meta: returnTx ? meta : undefined
-            })
-          })
+              _meta: returnTx ? meta : undefined,
+            });
+          }
         }
-      })
+      }
     }
   }
 
   const client = await new Client('wss://xrplcluster.com', {
-    NoUserAgent: true
-  })
+    NoUserAgent: true,
+  });
 
   const getMore = async marker => {
     const result = await client.send({
       command: 'account_tx',
       account,
       limit: 10,
-      marker
-    })
-  
-    display(result)
-    return result?.marker
+      marker,
+    });
+
+    //display(result);
+
+    if (result.transactions.length === 0 || new Date((result.transactions[0].tx.date + 946684800) * 1000).toISOString() <= isoEndDate) {
+      return null; // No more transactions or reached the cutoff date
+    }
+
+    let earliestDate = 946684800
+
+    if (result?.transactions) {
+        result.transactions.forEach(r => {
+            const { tx } = r
+            //console.log(tx.date)
+            if ( tx.date < earliestDate) {
+            earliestDate = tx.date
+            }
+            // if ( tx.TransactionType === 'Payment') {
+            //   console.log(tx.TransactionType)
+            // }
+
+            //console.log(earliestDate)
+        })
+
+    const ledgerDate = (new Date((earliestDate + 946684800) * 1000)).toISOString()
+    //console.log(ledgerDate)
+
+    if (isoEndDate <= ledgerDate) {
+        display(result)
+        return result?.marker
+        }
+    } 
+
   }
 
-  let proceed = await getMore()
+  let proceed = await getMore();
 
   while (proceed) {
-    proceed = await getMore(proceed)
+    proceed = await getMore(proceed);
   }
 
-  client.close()
+  client.close();
 }
 
 const fields = [
-  'ledger',
-  'direction',
-  'txtype',
-  'date',
-  'currency',
-  'amount',
-  'is_fee',
-  'fee',
-  'hash'
-]
+  'Time',
+  'Raw Time',
+  'Type',
+  'Amount',
+  'Currency',
+  'Counterparty',
+  'Counterparty name',
+  'Balance',
+  'Hash',
+];
 
 module.exports = {
   app,
-  fields
-}
+  fields,
+};
