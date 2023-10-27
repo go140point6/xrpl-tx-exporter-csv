@@ -74,7 +74,7 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
               "Currency": currency,
               "Counterparty": mutation.counterparty,
               "Counterparty name": undefined,
-              "balance": undefined,
+              "Balance": undefined,
               "Hash": tx.hash,
               _tx: returnTx ? tx : undefined,
               _meta: returnTx ? meta : undefined,
