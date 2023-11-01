@@ -15,14 +15,14 @@ Note: I originally used GateHub's free export .csv option that was publicly avai
 - Type (XRPL Transaction Type)
 - Amount (amount in XRP (not drops) or IOU)
 - Currency (XRP or KoinlyID of token)
-- Counterparty ()
+- Counterparty (mutation.counterparty)
 - Counterparty name (undefined)
 - Balance (undefined)
 - Hash (tx.Hash)
 
 # Run: commandline (to CSV) - The way I do it
 
-I run this on Ubuntu 20.04 and do it this way.  See ORIGINAL for WietseWind's instructions.
+I run this on Ubuntu 20.04 and 22.04, and do it this way.  See ORIGINAL for WietseWind's instructions.
 
 ## Install
 
@@ -80,7 +80,7 @@ The biggest issue tracking cryptocurrency and NFTs for tax purposes in Koinly is
 - Every NFT IOU Token can be assigned a KoinlyID, ideally finding the real KoinlyID but really you can use any KoinlyID that doesn't pull pricing.  Koinly does not, as of this writing, assign pricing info to even the correctly identified IOU tokens, so you will need to price it manually.  I've found https://xrpl.to/ to be an immense help.</br>
 - Pair up each KoinlyID with a NULL token.  As of this writing there seems to be about 330 NULL tokens (NULL, NULL1, NULL2, etc.).  This NULL token will represent the entire collection.  For example, my favorite XRPL NFT Collection is https://xrp.cafe/collection/xshrooms and I've assigned that to NULL35.</br>
 - During minting, 0.5 xShrooms IOU Token equaled one xShrooms NFT and that conversion was a taxable event, an exchange of one token for another. As I cleaned up my imported transactions, I switch what Koinly saw as a "Withdrawal" of the IOU token to an unknown wallet to an "Exchange" of that 0.5 IOU token going to 1 NULL35 token in my same wallet, and Koinly would correctly calculate cost basis gain/loss for that transaction.  I noted the exact NFT number in the description and I have all my NFTs in a spreadsheet for easier lookup.
-- When done, I had zero xShrooms NFT IOU tokens and say 20 xShrooms NFTs.  What happens when I sell one NFT?  I can go back and find the exact cost basis for that particular NFT but I can't just sell one NULL35 token because the cost basis wouldn't be correct.  I found that I could manually deposit 1 xShrooms IOU Token with a date/time just a minute or two before the sale and assign it the correct cost basis based on my records.  Then the "Deposit" that Koinly captured on import (having no idea where the XRP came from) could be switched to an "Exchange" of one xShrooms IOU Token to XRP and since there would only be the token I just added, the cost basis would be correct. The most important part is DO NOT assign a tag to this phantom deposit!  If you leave it just as a "Deposit" then it won't be included in your yearly income report (you *should* double-check this at years end, because if it somehow does get added as income, you will be taxed on this phantom deposit).
+- When done, I had zero xShrooms NFT IOU tokens and say 20 xShrooms NFTs.  What happens when I sell one NFT?  I can go back and find the exact cost basis for that particular NFT but I can't just sell one NULL35 token because the cost basis wouldn't be correct.  I found that I could manually deposit 1 xShrooms IOU Token with a date/time just a minute or two before the sale (assuming a short-term gain of less than 365 days... use a date 366 days ago if you've held the NFT over a year) and assign it the correct cost basis based on my records.  Then the "Deposit" that Koinly captured on import (having no idea where the XRP came from) could be switched to an "Exchange" of one xShrooms IOU Token to XRP and since there would only be the token I just added, the cost basis would be correct. The most important part is DO NOT assign a tag to this phantom deposit!  If you leave it just as a "Deposit" then it won't be included in your yearly income report (you *should* double-check this at years end, because if it somehow does get added as income, you will be taxed on this phantom deposit).
 - I have not found another way to correctly assign cost basis and this one seems to work. What if I sell all 20 of my NFTs, what do I do with all those NULL35 tokens since I still show that I hold 20 NULL35 tokens? Nothing, I don't care as I don't use Koinly to track my portfolio, I just use it to prepare documentation for tax time. Those NULL35 tokens are just placeholders that I no longer need to hold places.
 
 # Run: as a module
