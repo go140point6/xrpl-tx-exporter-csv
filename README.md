@@ -46,7 +46,7 @@ Get xrpl-tx-exporter
 `node index.js {account} {earliest_date} {koinlySearch}`
 
 {account} = your wallet address (rXXX...) - REQUIRED</br>
-{end_date} = how far back to go in format YYYYMMDD - REQUIRED</br>
+{earliest_date} = how far back to go in format YYYYMMDD - REQUIRED</br>
 {koinlySearch} = counterparty.currency values missing from customTokens.csv, argument can only be true - OPTIONAL (see below)</br>
 
 Example:</br>
