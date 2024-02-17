@@ -2,6 +2,11 @@ const Client = require('rippled-ws-client');
 const { parseBalanceChanges } = require('ripple-lib-transactionparser');
 const sharedArrays = require('./shared/sharedArrays');
 
+// Should be either XRP or XAH (uncomment later in code)
+//const chain = "XAH"
+const chain = "XRP"
+
+
 const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
   const display = result => {
     if (result?.transactions) {
@@ -25,7 +30,7 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
         if (Object.keys(balanceChanges).indexOf(account) > -1) {
           const mutations = balanceChanges[account];
           for (const mutation of mutations) {
-            let currency = mutation.counterparty === '' ? 'XRP' : `${mutation.counterparty}.${mutation.currency}`;
+            let currency = mutation.counterparty === '' ? chain : `${mutation.counterparty}.${mutation.currency}`;
             const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee) ? 1 : 0;
             const fee = direction === 'sent' ? Number(tx?.Fee) / 1000000 * -1 : 0;
 
@@ -33,14 +38,14 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
               //console.log("koinlySearch is ON!")
               //result.marker = undefined
               const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
-              if (!token && currency !== 'XRP' && mutation.counterparty) {
+              if (!token && currency !== chain && mutation.counterparty) {
                 console.log('KoinlyID NOT FOUND,', currency)
               }
             }
 
             // I don't track the fractions of XRP used for gas or XPR received for spam messages (less than 0.05 XRP, sent or received), so create blank entries for these conditions
             //if (tx?.TransactionType === 'NFTokenCreateOffer' || tx?.TransactionType === 'NFTokenAcceptOffer' || tx?.TransactionType === 'NFTokenCancelOffer' || mutation.value <= 0.001) {
-            if (currency === 'XRP' && mutation.value >= -0.05 && mutation.value <= 0.05) {
+            if (currency === chain && mutation.value >= -0.05 || mutation.value <= 0.05) {
               moment = undefined
               tx.TransactionType = undefined
               mutation.value = undefined
@@ -55,7 +60,7 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
             // transactions page, filter to that counterparty.currency and you should find your one test deposit.  Refresh the page and when it refreshes, it should be
             // showing the koinly ID.  Delete your test deposit and update the sharedArrays.csv with this info.
             
-            if (currency !== 'XRP' && mutation.counterparty && koinlySearch === false) {
+            if (currency !== chain && mutation.counterparty && koinlySearch === false) {
                 const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
                 if (token) {
                     currency = token.koinlyid
@@ -85,9 +90,15 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
     }
   }
 
+  // If XAH, use:
+  //const client = await new Client('wss://xahau.network', {
+  //  NoUserAgent: true,
+  //})
+
+  // If XRP, use:
   const client = await new Client('wss://xrplcluster.com', {
     NoUserAgent: true,
-  });
+  })
 
   const getMore = async marker => {
     const result = await client.send({
