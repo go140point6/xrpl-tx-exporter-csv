@@ -37,15 +37,15 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
             if (koinlySearch === true) {
               //console.log("koinlySearch is ON!")
               //result.marker = undefined
-              const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
-              if (!token && currency !== chain && mutation.counterparty) {
+              const token = sharedArrays.support.customTokens.find((row) => row.counterparty && row.currency === currency)
+              if (!token && currency !== chain && currency) {
                 console.log('KoinlyID NOT FOUND,', currency)
               }
             }
 
             // I don't track the fractions of XRP used for gas or XPR received for spam messages (less than 0.05 XRP, sent or received), so create blank entries for these conditions
             //if (tx?.TransactionType === 'NFTokenCreateOffer' || tx?.TransactionType === 'NFTokenAcceptOffer' || tx?.TransactionType === 'NFTokenCancelOffer' || mutation.value <= 0.001) {
-            if (currency === chain && mutation.value >= -0.05 || mutation.value <= 0.05) {
+            if (currency === chain && mutation.value >= -0.05 && mutation.value <= 0.05) {
               moment = undefined
               tx.TransactionType = undefined
               mutation.value = undefined
@@ -60,13 +60,19 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
             // transactions page, filter to that counterparty.currency and you should find your one test deposit.  Refresh the page and when it refreshes, it should be
             // showing the koinly ID.  Delete your test deposit and update the sharedArrays.csv with this info.
             
-            if (currency !== chain && mutation.counterparty && koinlySearch === false) {
-                const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
+            //if (currency !== chain && mutation.counterparty && koinlySearch === false) {
+              if (currency !== chain && currency && koinlySearch === false) {
+                //console.log(currency)
+                //const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
+                const token = sharedArrays.support.customTokens.find((row) => {
+                  return row.counterparty === mutation.counterparty && row.currency === mutation.currency
+                })
+                //console.log(token)
                 if (token) {
                     currency = token.koinlyid
                 } else {
                   console.log('KoinlyID NOT FOUND,', currency)
-                  console.log('STOP! Koinly ID for ', mutation.counterparty, ' not found in customTokens.csv.  Recommend you run again with the <koinlySearch> argument to get all missing counterparty.currency entries in a .csv to fix before running again.')
+                  console.log('STOP! Koinly ID for ', currency, ' not found in customTokens.csv.  Recommend you run again with the <koinlySearch> argument to get all missing counterparty.currency entries in a .csv to fix before running again.')
                   result.marker = undefined
                 }
             }
