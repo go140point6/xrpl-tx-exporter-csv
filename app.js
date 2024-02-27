@@ -3,8 +3,8 @@ const { parseBalanceChanges } = require('ripple-lib-transactionparser');
 const sharedArrays = require('./shared/sharedArrays');
 
 // Should be either XRP or XAH (uncomment later in code)
+//const chain = "XAH"
 const chain = "XAH"
-//const chain = "XRP"
 
 
 const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
@@ -35,7 +35,7 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
               //console.log(mutation.currency)
               continue
             }
-            let currency = mutation.counterparty === '' ? 'XAH' : `${mutation.counterparty}.${mutation.currency}`;
+            let currency = mutation.counterparty === '' ? chain : `${mutation.counterparty}.${mutation.currency}`;
             const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee) ? 1 : 0;
             const fee = direction === 'sent' ? Number(tx?.Fee) / 1000000 * -1 : 0;
 
@@ -50,15 +50,11 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
 
             // I don't track the fractions of XRP used for gas or XPR received for spam messages (less than 0.05 XRP, sent or received), so create blank entries for these conditions
             //if (tx?.TransactionType === 'NFTokenCreateOffer' || tx?.TransactionType === 'NFTokenAcceptOffer' || tx?.TransactionType === 'NFTokenCancelOffer' || mutation.value <= 0.001) {
-            //  if (currency !== 'XRP' && mutation.value >= -0.05 || mutation.value <= 0.05) {
-            //   //console.log("Currency", typeof(currency))
-            //   //console.log("Chain", typeof(chain))
-            //    moment = undefined
-            //    tx.TransactionType = undefined
-            //    mutation.value = undefined
-            //    currency = undefined
-            //    tx.hash = undefined
-            //  }
+              if (currency === 'XRP') {
+                if (mutation.value >= -0.05 && mutation.value <= 0.05) {
+                  return
+                }
+              }
 
             // Currency is what Koinly uses, this is counterparty.currency either something like rHiPGSMBbzDGpoTPmk2dXaTk12ZV1pLVCZ.484144414C495445000000000000000000000000 or
             // rDuckCoinu8jntxtYoWRhEv4oNvsLYx6EQ.RDC (anything greater than 3 characters in currency results in the hex above) but you can't import these, so they need to
