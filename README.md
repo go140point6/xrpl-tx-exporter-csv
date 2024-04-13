@@ -41,6 +41,7 @@ Get xrpl-tx-exporter
 
 `git clone https://github.com/go140point6/xrpl-tx-exporter-csv.git`</br>
 `cd xrpl-tx-exporter-csv`</br>
+`git switch xahau`</br>
 `npm install`
 
 ## Run
