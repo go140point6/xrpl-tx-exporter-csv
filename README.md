@@ -2,7 +2,9 @@
 
 This small node app fetches transactions for an account and returns the results in CSV (when called from the command line) or as a parsed object (when used as a node module).  It will use a date command as part of the command line and will stop pulling transactions once it goes beyond (if you want everything use some long ago date).  It also has a very crude way to compile Koinly ID's for tokens (specifically for XRP IOU tokens that were issued before NFT's came to the XRPL).
 
-Uses [xrplcluster.com](https://xrplcluster.com) full history nodes.
+Update for Xahau!  In app.js, select the base currency (XRP or XAH) and the network to use (leave one commented out, uncomment the one you want).
+
+Uses [xrplcluster.com](https://xrplcluster.com) full history nodes for XRPL and [xahaua.network](https://xahau.network) for XAHL.
 
 I forked https://github.com/WietseWind/xrpl-tx-exporter-csv (Thank you WietseWind! &#9829;) and feel like I improved it... :)... it's specifically designed to output a .csv that can be imported directly into Koinly with just the important transactions.  Since Koinly's business model is to charge per transaction recorded, I personally get rid of "nonsense" transactions that would net zero tax liability. If you want these transactions, it's pretty easy to comment out my changes and get them but if you play with NFTs on the XRPL at all you will literally have thousands of entries per year for creating and cancelling offers that Koinly will happily charge you for (and push you to a bigger tier) but won't add to your tax liability by even $1.
 
@@ -39,6 +41,7 @@ Get xrpl-tx-exporter
 
 `git clone https://github.com/go140point6/xrpl-tx-exporter-csv.git`</br>
 `cd xrpl-tx-exporter-csv`</br>
+`git switch xahau`</br>
 `npm install`
 
 ## Run
@@ -70,6 +73,7 @@ Review the custom currencies I have compiled in data/customTokens.csv, you will 
 - Open the .csv and convert to to table, select column A to show "KoinlyID NOT FOUND". You will see the currency in column B.  Ignore everything else.</br>
 - For each currency, in Koinly, add a new Deposit transaction (temporarily) of quantity 1 and paste in the currency.  Koinly will think and then show a match.  Click on the coin it shows, and save the transaction.</br>
 - Find your transaction by filtering your Transactions to that currency (paste it in) and clicking it to save the filter.  Now refresh the page (F5) and you should see the "friendly name" replaced with the KoinlyID.  Save that number and delete the transaction.</br>
+- NOTE! This refresh page trick no longer seems to work. Try using the entire counterparty.currency on https://app.koinly.io/p/markets ... the one time I tried it worked.
 - 95% of the time, the full currency found the Koinly equivalent entry, but a few times it didn't.  Try just the counterparty (first part of the currency) if the currency doesn't seem to work.</br>
 - Work your way through all your custom tokens, adding entries to data/customTokens.csv as needed.  Once done, output your transactions to screen again looking for any STOP! messages.  If none, all your custom token transactions are accounted for.
 
