@@ -3,8 +3,8 @@ const { parseBalanceChanges } = require('ripple-lib-transactionparser');
 const sharedArrays = require('./shared/sharedArrays');
 
 // Should be either XRP or XAH (uncomment later in code)
-//const chain = "XAH"
-const chain = "XAH"
+const chain = "XRP"  // see line 107 comment out XAH on line 102
+//const chain = "XAH" // see line 102 comment out XRP on line 107
 
 
 const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
@@ -100,14 +100,14 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
   }
 
   // If XAH, use:
-  const client = await new Client('wss://xahau.network', {
-    NoUserAgent: true,
-  })
-
-  // If XRP, use:
-  //const client = await new Client('wss://xrplcluster.com', {
+  //const client = await new Client('wss://xahau.network', {
   //  NoUserAgent: true,
   //})
+
+  // If XRP, use:
+  const client = await new Client('wss://xrplcluster.com', {
+    NoUserAgent: true,
+  })
 
   const getMore = async marker => {
     const result = await client.send({
