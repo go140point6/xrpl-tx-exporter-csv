@@ -1,14 +1,10 @@
-# XRPL transaction exporter improved (for Koinly import)
+# XRPL and XAHL transaction exporter improved (for Koinly import)
 
-This small node app fetches transactions for an account and returns the results in CSV (when called from the command line) or as a parsed object (when used as a node module).  It will use a date command as part of the command line and will stop pulling transactions once it goes beyond (if you want everything use some long ago date).  It also has a very crude way to compile Koinly ID's for tokens (specifically for XRP IOU tokens that were issued before NFT's came to the XRPL).
+This small node app fetches transactions for a single account OR a list of accounts and returns the results in CSV. It will use a date command as part of the command line and will stop pulling transactions once it goes beyond (if you want everything use some long ago date). It also has a very crude way to compile Koinly ID's for tokens. It works on both XRPL and XAHL.
 
-Update for Xahau!  In app.js, select the base currency (XRP or XAH) and the network to use (leave one commented out, uncomment the one you want).
+Uses [xrplcluster.com](https://xrplcluster.com) full history node for XRPL and [xahaua.network](https://xahau.network) for XAHL.
 
-Uses [xrplcluster.com](https://xrplcluster.com) full history nodes for XRPL and [xahaua.network](https://xahau.network) for XAHL.
-
-I forked https://github.com/WietseWind/xrpl-tx-exporter-csv (Thank you WietseWind! &#9829;) and feel like I improved it... :)... it's specifically designed to output a .csv that can be imported directly into Koinly with just the important transactions.  Since Koinly's business model is to charge per transaction recorded, I personally get rid of "nonsense" transactions that would net zero tax liability. If you want these transactions, it's pretty easy to comment out my changes and get them but if you play with NFTs on the XRPL at all you will literally have thousands of entries per year for creating and cancelling offers that Koinly will happily charge you for (and push you to a bigger tier) but won't add to your tax liability by even $1.
-
-Note: I originally used GateHub's free export .csv option that was publicly available without an account (https://gatehub.net/explorer/rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY - Transactions tab - Export CSV) to produce a Koinly supported .csv for import. It required a lot of massaging to the .csv before import (especially with any custom currency where the ticker matched some other chain's token) but worked well enough. Then one day I went to export and the option was gone!  It has since returned (I guess I wasn't the only one to complain) but before it did, it was enough of a push to create something specific to my needs.  I've purposely kept the basic GateHub column names, even when I don't populate with values, since I know it works. 
+I forked https://github.com/WietseWind/xrpl-tx-exporter-csv (Thank you WietseWind! &#9829;). My customizations are designed to produce a ready-to-import .csv into Koinly and EXCLUDE minor tx that result in no tax liability (i.e. spam messages, creating/removing offers, etc.). If you want all tx, see comments in app.js and comment out the appropriate section.
 
 ### Exported columns:
 
@@ -22,7 +18,7 @@ Note: I originally used GateHub's free export .csv option that was publicly avai
 - Balance (undefined)
 - Hash (tx.Hash)
 
-# Run: commandline (to CSV) - The way I do it
+# Run: commandline - The way I do it
 
 I run this on Ubuntu 20.04 and 22.04, and do it this way.  See ORIGINAL for WietseWind's instructions.
 
@@ -30,7 +26,7 @@ I run this on Ubuntu 20.04 and 22.04, and do it this way.  See ORIGINAL for Wiet
 
 Get latest nvm (Node Version Manager) - see https://github.com/nvm-sh/nvm
 
-`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` </br>
+`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash` </br>
 `source ~/.bashrc`
 
 Get latest node LTS (long-term support)
@@ -41,41 +37,52 @@ Get xrpl-tx-exporter
 
 `git clone https://github.com/go140point6/xrpl-tx-exporter-csv.git`</br>
 `cd xrpl-tx-exporter-csv`</br>
-`git switch xahau`</br>
 `npm install`
+
+Copy myAddresses.csv.sample to myAddresses.csv and add all the XRPL and XAHL wallets you want to export from. If you have the same address on both sides, be sure to designate 'xrp' or 'xah' (add the address twice - see examples)
 
 ## Run
 
-`node index.js {account} {earliest_date} {koinlySearch}`
+`node index.js {account} {end_date} {ledger} {koinlySearch}`
 
-{account} = your wallet address (rXXX...) - REQUIRED</br>
-{earliest_date} = how far back to go in format YYYYMMDD - REQUIRED</br>
+{account} = your wallet address (rXXX...) OR the word "LIST" to use the .csv created array - REQUIRED</br>
+{end_date} = which ledger to use. Only "XRP" or "XAH" are valid, default is "XRP" - OPTIONAL</br>
+{ledger} = which ledger to use. Only "XRP" or "XAH" are valid, default is "XRP" - OPTIONAL</br>
 {koinlySearch} = counterparty.currency values missing from customTokens.csv, argument can only be true - OPTIONAL (see below)</br>
 
-Example:</br>
+Example #1 - Single address on XRPL going back forever:</br>
+`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20000101`
+
+Example #2 - Single address on XAHL going back to start of 2024:</br>
+`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY XAH 20240101`
+
+Example #3 - Multiple addresses on XRPL going back to start of 2023:</br>
 `node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20230101`
+
+Example #4 - Multiple addresses on XAHL going back forever:</br>
+`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY XAH 20200101`
+
+## STOP! Messages
+
+STOP! message: Always observe output to screen, looking for STOP! messages if unfamiliar currency is detected. It is then recommended that you run with the koinlySearch true switch for processing to add to data/customTokens.csv. Once all your custom tokens are added, you can proceed to get a clean file for import.
 
 ## Store output as CSV
 
-`node index.js {account} {earliest_date} {koinlySearch} > {some-file}`
-
-`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20230101 > rPEPPER7k-20230101.csv`
-
-Small values: Currently I am disregarding any XRP value less than 0.05 XRP (either way) so you will get lots of empty lines.  This is OK, Koinly will ignore empty lines.
-
-STOP! message: Always run to screen and observe, looking for STOP! messages if unfamiliar currency is detected.  It is then recommended that you run with the koinlySearch true switch and output to file for processing to add to data/customTokens.csv.
+CSV files are created in the 'output' directory on every run and named {account}.{ledger}.{end_date}.csv. You no longer have to redirect this at the command line.
 
 ## koinlySearch and coming up with the KoinlyID
 
-Review the custom currencies I have compiled in data/customTokens.csv, you will add to this file anything specific to your wallet that you find. This is labor intensive but is the only way I've found to accurately import into Koinly consistently, but finding the KoinlyID is a pain.  Here is how I do it:
+Review the custom currencies I have compiled in data/customTokens.csv, you will add to this file anything specific to your wallet that you find. This is labor intensive but is the only way I've found to accurately import into Koinly consistently. Here is how I do it:
 
-- `node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20000101 > rPEPPER7k-koinlySearchAllDates.csv`</br>
-- Open the .csv and convert to to table, select column A to show "KoinlyID NOT FOUND". You will see the currency in column B.  Ignore everything else.</br>
-- For each currency, in Koinly, add a new Deposit transaction (temporarily) of quantity 1 and paste in the currency.  Koinly will think and then show a match.  Click on the coin it shows, and save the transaction.</br>
-- Find your transaction by filtering your Transactions to that currency (paste it in) and clicking it to save the filter.  Now refresh the page (F5) and you should see the "friendly name" replaced with the KoinlyID.  Save that number and delete the transaction.</br>
-- NOTE! This refresh page trick no longer seems to work. Try using the entire counterparty.currency on https://app.koinly.io/p/markets ... the one time I tried it worked.
-- 95% of the time, the full currency found the Koinly equivalent entry, but a few times it didn't.  Try just the counterparty (first part of the currency) if the currency doesn't seem to work.</br>
+- Run command on a single address or LIST, but use the koinlySearch option of true (see ##Run instructions)</br>
+- Open the .csv and convert to to table in your spreadsheet software, select column A to show "KoinlyID NOT FOUND". You will see the currency in column B and should get rid of duplicates. Ignore everything else.</br>
+- For each unique currency, in Koinly, add a new Deposit transaction (temporarily) of quantity 1 and paste in the FULL currency (counterparty.currency). Koinly will think and then (usually) show a match. Click on the token it shows, and save the transaction.</br>
+- Filter your transactions to just that currency (paste in FULL currency) and clicking it to save the filter. Now refresh the page (F5) and look in the URL for the currency_id=<digits>. Save that number and delete the transaction.</br>
 - Work your way through all your custom tokens, adding entries to data/customTokens.csv as needed.  Once done, output your transactions to screen again looking for any STOP! messages.  If none, all your custom token transactions are accounted for.
+
+## Koinly and AMM Liquidity Pool tokens
+
+You can find AMM LP tokens the same way as above. After import you may have to match a single deposit with your two withdrawals but Koinly is generally good at splitting that automatically. If there is an issue with Koinly refusing to create a pool, you may have to use the generic LP tokens (LP1, LP2, etc) like you do with NULL tokens.
 
 ## Koinly, NFT IOU tokens, and NFTs on the XRPL
 
@@ -84,16 +91,17 @@ The biggest issue tracking cryptocurrency and NFTs for tax purposes in Koinly is
 - Every NFT IOU Token can be assigned a KoinlyID, ideally finding the real KoinlyID but really you can use any KoinlyID that doesn't pull pricing.  Koinly does not, as of this writing, assign pricing info to even the correctly identified IOU tokens, so you will need to price it manually.  I've found https://xrpl.to/ to be an immense help.</br>
 - Pair up each KoinlyID with a NULL token.  As of this writing there seems to be about 330 NULL tokens (NULL, NULL1, NULL2, etc.).  This NULL token will represent the entire collection.  For example, my favorite XRPL NFT Collection is https://xrp.cafe/collection/xshrooms and I've assigned that to NULL35.</br>
 - During minting, 0.5 xShrooms IOU Token equaled one xShrooms NFT and that conversion was a taxable event, an exchange of one token for another. As I cleaned up my imported transactions, I switch what Koinly saw as a "Withdrawal" of the IOU token to an unknown wallet to an "Exchange" of that 0.5 IOU token going to 1 NULL35 token in my same wallet, and Koinly would correctly calculate cost basis gain/loss for that transaction.  I noted the exact NFT number in the description and I have all my NFTs in a spreadsheet for easier lookup.
-- When done, I had zero xShrooms NFT IOU tokens and say 20 xShrooms NFTs.  What happens when I sell one NFT?  I can go back and find the exact cost basis for that particular NFT but I can't just sell one NULL35 token because the cost basis wouldn't be correct.  I found that I could manually deposit 1 xShrooms IOU Token with a date/time just a minute or two before the sale (assuming a short-term gain of less than 365 days... use a date 366 days ago if you've held the NFT over a year) and assign it the correct cost basis based on my records.  Then the "Deposit" that Koinly captured on import (having no idea where the XRP came from) could be switched to an "Exchange" of one xShrooms IOU Token to XRP and since there would only be the token I just added, the cost basis would be correct. The most important part is DO NOT assign a tag to this phantom deposit!  If you leave it just as a "Deposit" then it won't be included in your yearly income report (you *should* double-check this at years end, because if it somehow does get added as income, you will be taxed on this phantom deposit).
+- When done, I had zero xShrooms NFT IOU tokens and say 20 xShrooms NFTs.  What happens when I sell one NFT?  I can go back and find the exact cost basis for that particular NFT but I can't just sell one NULL35 token because the cost basis wouldn't be correct.  I found that I could manually deposit 1 xShrooms IOU token with a date/time just a minute or two before the sale (assuming a short-term gain of less than 365 days... use a date 366 days ago if you've held the NFT over a year) and assign it the correct cost basis based on my records.  Then the "Deposit" that Koinly captured on import (having no idea where the XRP came from) could be switched to an "Exchange" of one xShrooms IOU Token to XRP and since there would only be the token I just added, the cost basis would be correct. The most important part is DO NOT assign a tag to this phantom deposit!  If you leave it just as a "Deposit" then it won't be included in your yearly income report (you *should* double-check this at years end, because if it somehow does get added as income, you will be taxed on this phantom deposit).
+- In some cases dealing with long-term capital gains, I've had to use a different NULL token to stand-in as a placeholder to get gains/loss correct. Track what you use in a spreadsheet.
 - I have not found another way to correctly assign cost basis and this one seems to work. What if I sell all 20 of my NFTs, what do I do with all those NULL35 tokens since I still show that I hold 20 NULL35 tokens? Nothing, I don't care as I don't use Koinly to track my portfolio, I just use it to prepare documentation for tax time. Those NULL35 tokens are just placeholders that I no longer need to hold places.
 
 # Run: as a module
 
-See ORIGINAL, I haven't tested or developed for this, as I only care about getting the .csv from the command line. It likely doesn't work with my changes.
+See ORIGINAL, I haven't tested or developed for this, as I only care about getting the .csv. It likely doesn't work with my changes but I haven't tested it.
 
 # Run: browser
 
-See ORIGINAL, I haven't tested or developed for this, as I only care about getting the .csv from the command line. It likely doesn't work with my changes.
+See ORIGINAL, I haven't tested or developed for this, as I only care about getting the .csv. It likely doesn't work with my changes but I haven't tested it.
 
 # Run: commandline (to CSV) - ORIGINAL
 
