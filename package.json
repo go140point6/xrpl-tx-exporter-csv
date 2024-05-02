@@ -1,16 +1,16 @@
 {
   "name": "xrpl-tx-export",
-  "version": "1.0.2",
-  "description": "Fetch XRPL transactions to CSV format",
+  "version": "2.0.1",
+  "description": "Fetch XRPL and XAHL transactions to CSV format",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "browserify -r .:xrpl-tx-export -o dist/xrpl-tx-export.js"
   },
-  "author": "Wietse Wind <xrpl@wietse.com>",
+  "author": "go140point6",
   "license": "MIT",
   "dependencies": {
-    "csv-parse": "^5.5.2",
+    "csv-parse": "^5.5.5",
     "ripple-lib-transactionparser": "^0.8.2",
     "rippled-ws-client": "^1.6.5"
   },

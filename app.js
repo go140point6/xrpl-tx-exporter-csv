@@ -2,12 +2,7 @@ const Client = require('rippled-ws-client');
 const { parseBalanceChanges } = require('ripple-lib-transactionparser');
 const sharedArrays = require('./shared/sharedArrays');
 
-// Should be either XRP or XAH (uncomment later in code)
-const chain = "XRP"  // see line 107 comment out XAH on line 102
-//const chain = "XAH" // see line 102 comment out XRP on line 107
-
-
-const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
+const app = async (account, cb, endTxDate, koinlySearch, ledger, returnTx) => {
   const display = result => {
     if (result?.transactions) {
       for (const r of result.transactions) {
@@ -30,27 +25,29 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
         if (Object.keys(balanceChanges).indexOf(account) > -1) {
           const mutations = balanceChanges[account];
           for (const mutation of mutations) {
-            //console.log(mutation.currency)
             if (mutation.value >= -0.05 && mutation.value <= 0.05) {
               //console.log(mutation.currency)
               continue
             }
-            let currency = mutation.counterparty === '' ? chain : `${mutation.counterparty}.${mutation.currency}`;
-            const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee) ? 1 : 0;
-            const fee = direction === 'sent' ? Number(tx?.Fee) / 1000000 * -1 : 0;
+            let currency = mutation.counterparty === '' ? ledger : `${mutation.counterparty}.${mutation.currency}`
+            const isFee = direction === 'sent' && Number(mutation.value) * -1 * 1000000 === Number(tx?.Fee) ? 1 : 0
+            const fee = direction === 'sent' ? Number(tx?.Fee) / 1000000 * -1 : 0
 
-            if (koinlySearch === true) {
+            if (koinlySearch === 'true') {
               //console.log("koinlySearch is ON!")
               //result.marker = undefined
-              const token = sharedArrays.support.customTokens.find((row) => row.counterparty && row.currency === currency)
-              if (!token && currency !== 'XRP' && currency) {
+              //const token = sharedArrays.support.customTokens.find((row) => row.counterparty && row.currency === currency)
+              const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty && row.currency === mutation.currency)
+              if (token) {
+                currency = token.koinlyid
+              } else if (!token && currency !== ledger && currency) {
                 console.log('KoinlyID NOT FOUND,', currency)
               }
             }
 
             // I don't track the fractions of XRP used for gas or XPR received for spam messages (less than 0.05 XRP, sent or received), so create blank entries for these conditions
             //if (tx?.TransactionType === 'NFTokenCreateOffer' || tx?.TransactionType === 'NFTokenAcceptOffer' || tx?.TransactionType === 'NFTokenCancelOffer' || mutation.value <= 0.001) {
-              if (currency === 'XRP') {
+              if (currency === ledger) {
                 if (mutation.value >= -0.05 && mutation.value <= 0.05) {
                   return
                 }
@@ -63,14 +60,13 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
             // transactions page, filter to that counterparty.currency and you should find your one test deposit.  Refresh the page and when it refreshes, it should be
             // showing the koinly ID.  Delete your test deposit and update the sharedArrays.csv with this info.
             
-            if (currency !== chain && mutation.counterparty && koinlySearch === false) {
+            if (currency !== ledger && mutation.counterparty && koinlySearch === 'false') {
               //if (currency === 'XRP' && currency && koinlySearch === false) {
                 //console.log(currency)
                 //const token = sharedArrays.support.customTokens.find((row) => row.counterparty === mutation.counterparty)
                 const token = sharedArrays.support.customTokens.find((row) => {
                   return row.counterparty === mutation.counterparty && row.currency === mutation.currency
                 })
-                //console.log(token)
                 if (token) {
                     currency = token.koinlyid
                 } else {
@@ -99,15 +95,17 @@ const app = async (account, cb, endTxDate, koinlySearch, returnTx) => {
     }
   }
 
-  // If XAH, use:
-  //const client = await new Client('wss://xahau.network', {
-  //  NoUserAgent: true,
-  //})
+  let client
 
-  // If XRP, use:
-  const client = await new Client('wss://xrplcluster.com', {
-    NoUserAgent: true,
-  })
+  if (ledger === "XAH") {
+    client = await new Client('wss://xahau.network', {
+      NoUserAgent: true,
+    })
+  } else if (ledger === 'XRP') {
+    client = await new Client('wss://xrplcluster.com', {
+      NoUserAgent: true,
+    })
+  } 
 
   const getMore = async marker => {
     const result = await client.send({
