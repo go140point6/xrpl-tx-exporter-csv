@@ -46,7 +46,7 @@ Copy myAddresses.csv.sample to myAddresses.csv and add all the XRPL and XAHL wal
 `node index.js {account} {end_date} {ledger} {koinlySearch}`
 
 {account} = your wallet address (rXXX...) OR the word "LIST" to use the .csv created array - REQUIRED</br>
-{end_date} = which ledger to use. Only "XRP" or "XAH" are valid, default is "XRP" - OPTIONAL</br>
+{end_date} = how far back to go in format YYYYMMDD - REQUIRED</br>
 {ledger} = which ledger to use. Only "XRP" or "XAH" are valid, default is "XRP" - OPTIONAL</br>
 {koinlySearch} = counterparty.currency values missing from customTokens.csv, argument can only be true - OPTIONAL (see below)</br>
 
@@ -54,13 +54,13 @@ Example #1 - Single address on XRPL going back forever:</br>
 `node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20000101`
 
 Example #2 - Single address on XAHL going back to start of 2024:</br>
-`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY XAH 20240101`
+`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20240101 XAH`
 
 Example #3 - Multiple addresses on XRPL going back to start of 2023:</br>
 `node index.js LIST 20230101`
 
 Example #4 - Multiple addresses on XAHL going back forever:</br>
-`node index.js LIST XAH 20200101`
+`node index.js LIST 20200101 XAH`
 
 ## STOP! Messages
 
