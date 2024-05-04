@@ -57,10 +57,10 @@ Example #2 - Single address on XAHL going back to start of 2024:</br>
 `node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY XAH 20240101`
 
 Example #3 - Multiple addresses on XRPL going back to start of 2023:</br>
-`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY 20230101`
+`node index.js LIST 20230101`
 
 Example #4 - Multiple addresses on XAHL going back forever:</br>
-`node index.js rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY XAH 20200101`
+`node index.js LIST XAH 20200101`
 
 ## STOP! Messages
 
